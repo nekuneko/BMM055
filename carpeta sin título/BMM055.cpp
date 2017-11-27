@@ -74,26 +74,6 @@ uint8_t Mag_getADC() { // return 1 when news values are available, 0 otherwise
 }
 #endif
 
-/********* 
-  >EL CÓDIGO DE ESTE DOCUMENTO VA EN EL FICHERO "Sensors.cpp", DE MULTIWII
-  
-  >EN EL FICHERO "def.h"
-  SUSTITUIR DENTRO DEL FICHERO "def.h", EN LA SECCIÓN  "Sensor Type definitions"
-  
-    #if defined(HMC5883) || defined(HMC5843) || defined(AK8975) || defined(MAG3110)
-    #define MAG 1
-
-  POR
-  
-    #if defined(HMC5883) || defined(HMC5843) || defined(AK8975) || defined(MAG3110)|| defined(BMM055)
-    #define MAG 1
-
-  O SIMPLEMENTE AÑADIR AL FINAL "|| defined(BMM055)" SIN LAS COMILLAS
-  
-  >EN EL FICHERO "Config.h" AÑADIR EN EN LA SECCIÓN "independent sensors", CONCRETAMENTE EN LA SUBSECCIÓN "I2C magnetometer"
-
-    #define BMM085
-**********/
 
 
 // -- COPIE EL CÓDIGO A PARTIR DE AQUÍ JUNTO A LOS DEMÁS MAGNETÓMETROS DEFINIDOS EN "Sensors.cpp"
