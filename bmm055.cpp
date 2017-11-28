@@ -1,24 +1,96 @@
-#include <Arduino.h>
 #include "bmm055.h"
-#include "i2c_adafruit.h"
+
 
 bmm055::bmm055 ()
-{
-  repZ  = 0;                // Reg Addr 0x52 def val 0x00 -> 
-  repXY = 0;                // Reg Addr 0x51 def val 0x00 ->
-  highThreshold = 0;        // Reg Addr 0x50 def val 0x00 ->
-  lowThreshold  = 0;        // Reg Addr 0x4F def val 0x00 ->
-  controlINT2 = 0;          // Reg Addr 0x4E def val 0x07 -> 
-  controlINT1 = 0;          // Reg Addr 0x4D def val 0x3f ->
-  controlOP = 0;            // Reg Addr 0x4C def val 0x06 -> Operation Mode, data rate 
-  controlPower = 0;         // Reg Addr 0x4B def val 0x01 -> Power control, soft reset
-  interruptStatusReg = 0;   // Reg Addr 0x4A def val 0x00 -> INTERRUPT_STATUS_REG
-  rawRHall = 0;            // Reg Addr 0x49 + 0x48
-  rawDataZ = 0;            // Reg Addr 0x47 + 0x46
-  rawDataY = 0;            // Reg Addr 0x45 + 0x44
-  rawDataX = 0;            // Reg Addr 0x43 + 0x42
-  chipID = 0;              // Reg Addr 0x40 def val 0x32
+{  
+  controlRepZ          = read8(BMM055_ADDRESS, BMM055_CTRL_REP_Z);              
+  controlRepXY         = read8(BMM055_ADDRESS, BMM055_CTRL_REP_XY);
+  controlHighThreshold = read8(BMM055_ADDRESS, BMM055_CTRL_HIGH_THRESHOLD);    
+  controlLowThreshold  = read8(BMM055_ADDRESS, BMM055_CTRL_LOW_THRESHOLD);   
+  controlInt2          = read8(BMM055_ADDRESS, BMM055_CTRL_INT2);    
+  controlInt1          = read8(BMM055_ADDRESS, BMM055_CTRL_INT1);    
+  controlOp            = read8(BMM055_ADDRESS, BMM055_CTRL_OP);   
+  controlPower         = read8(BMM055_ADDRESS, BMM055_CTRL_POWER);   
+  interruptStatusReg   = read8(BMM055_ADDRESS, BMM055_INT_STATUS);     
+  chipID               = read8(BMM055_ADDRESS, BMM055_CHIP_ID); 
+
+ /*
+  rawRHall = read16_LE(BMM055_ADDRESS, BMM055_RHALL_LSB);    
+  rawDataZ = read16_LE(BMM055_ADDRESS, BMM055_DATAZ_LSB);    
+  rawDataY = read16_LE(BMM055_ADDRESS, BMM055_DATAY_LSB);    
+  rawDataX = read16_LE(BMM055_ADDRESS, BMM055_DATAX_LSB);  
+  */
 }
+
+
+void bmm055::setRepZ (uint8_t value)
+{
+  controlRepZ = value;
+  write8(BMM055_ADDRESS, BMM055_CTRL_REP_Z, controlRepZ);
+  delay(2); // wait until changes take effect
+}
+
+void bmm055::setRepXY (uint8_t value)
+{
+  controlRepXY = value;
+  write8(BMM055_ADDRESS, BMM055_CTRL_REP_XY, controlRepXY);
+  delay(2); // wait until changes take effect
+}
+
+void bmm055::setHighThreshold (uint8_t value) 
+{
+  controlHighThreshold = value;
+  write8(BMM055_ADDRESS, BMM055_CTRL_HIGH_THRESHOLD, controlHighThreshold);
+  delay(2); // wait until changes take effect
+}
+
+void bmm055::setLowThreshold (uint8_t value) 
+{
+  controlLowThreshold = value;
+  write8(BMM055_ADDRESS, BMM055_CTRL_LOW_THRESHOLD, controlLowThreshold);
+  delay(2); // wait until changes take effect
+}
+
+void bmm055::setControlInt2 (uint8_t value)
+{
+  controlInt2 = value;
+  write8(BMM055_ADDRESS, BMM055_CTRL_INT2, controlInt2);
+  delay(2); // wait until changes take effect
+}
+
+void bmm055::setControlInt1 (uint8_t value)
+{
+  controlInt1 = value;
+  write8(BMM055_ADDRESS, BMM055_CTRL_INT1, controlInt1);
+  delay(2); // wait until changes take effect
+}
+
+void bmm055::setControlOp (uint8_t value)
+{
+  controlOp = value;
+  write8(BMM055_ADDRESS, BMM055_CTRL_OP, controlOp);
+  delay(2); // wait until changes take effect
+}
+
+void bmm055::doSuspendMode ()
+{
+  write8(BMM055_ADDRESS, BMM055_CTRL_POWER, 0x0);
+  delay(2); // wait until changes take effect
+}
+
+void bmm055::doSleepMode ()
+{
+  write8(BMM055_ADDRESS, BMM055_CTRL_POWER, 0x1);
+  delay(2); // wait until changes take effect
+}
+
+void bmm055::doSoftReset ()
+{
+  write8(BMM055_ADDRESS, BMM055_CTRL_POWER, 0x83);
+  delay(2); // wait until changes take effect
+}
+
+
 
 
 // Imprime todos los registros del magnetómetro sin desglose de información
@@ -37,78 +109,136 @@ void bmm055::printMagDefaultValues ()
   Serial.print(BMM055_CHIP_ID, HEX);
   Serial.print(": 0x");
   Serial.println(read8(BMM055_ADDRESS, BMM055_CHIP_ID), HEX);
-  
 }
 
 
+void bmm055::printMagRepZ ()
+{
+  uint8_t repZ = read8(BMM055_ADDRESS, BMM055_CTRL_REP_Z);
+  Serial.print("     repZ: 0x"); Serial.println(repZ, HEX);
+  Serial.print("default is 0x"); Serial.println(0x00, HEX);
+}
 
-// ¡PROXIMO DÍA! IMPLEMENTAR LA FUNCION PARA VER EL ESTADO DEL CONTROL INT 2
+void bmm055::printMagRepXY ()
+{
+  uint8_t repXY = read8(BMM055_ADDRESS, BMM055_CTRL_REP_XY);
+  Serial.print("    repXY: 0x"); Serial.println(repXY, HEX);
+  Serial.print("default is 0x"); Serial.println(0x00, HEX);
+}
+
+void bmm055::printMagHighThreshold ()
+{
+  uint8_t highThreshold = read8(BMM055_ADDRESS, BMM055_CTRL_HIGH_THRESHOLD);
+  Serial.print("highThreshold: 0x"); Serial.println(highThreshold, HEX);
+  Serial.print("    default is 0x"); Serial.println(0x00, HEX);
+}
+
+void bmm055::printMagLowThreshold ()
+{
+  uint8_t lowThreshold = read8(BMM055_ADDRESS, BMM055_CTRL_LOW_THRESHOLD);
+  Serial.print("lowThreshold: 0x"); Serial.println(lowThreshold, HEX);
+  Serial.print("   default is 0x"); Serial.println(0x00, HEX);
+}
+
+
+// Control Interruption & Axis Register 2 Desglosado
+void bmm055::printMagControlInt2 ()
+{
+  controlInt2 = read8(BMM055_ADDRESS, BMM055_CTRL_INT2);
+  Serial.print("controlInt2 0x4E: 0x"); Serial.println(controlInt2, HEX);
+  Serial.print("       default is 0x"); Serial.print(0x07, HEX);
+  Serial.println(" - XYZ axis active, interrupts disabled");
+  
+  Serial.print("[7] En Data Ready Pin:  ");
+  Serial.println((controlInt2 >> 7) & 1u, HEX);
+
+  Serial.print("[6] En Interrupt Pin:   ");
+  Serial.println((controlInt2 >> 6) & 1u, HEX);
+
+  Serial.print("[5] En Channel Z:       ");
+  Serial.println((controlInt2 >> 5) & 1u, HEX);
+
+  Serial.print("[4] En Channel Y:       ");
+  Serial.println((controlInt2 >> 4) & 1u, HEX);
+
+  Serial.print("[3] En Channel X:       ");
+  Serial.println((controlInt2 >> 3) & 1u, HEX);
+
+  Serial.print("[2] DR Polarity:        ");
+  Serial.println((controlInt2 >> 2) & 1u, HEX);
+
+  Serial.print("[1] Interrupt Latch:    ");
+  Serial.println((controlInt2 >> 1) & 1u, HEX);
+
+  Serial.print("[0] Interrupt Polarity: ");
+  Serial.println((controlInt2 >> 0) & 1u, HEX);
+}
 
 
 // Control Interruption Register 1 Desglosado
-void bmm055::printMagControlINT1 ()
+void bmm055::printMagControlInt1 () 
 {
-  controlINT1 = read8(BMM055_ADDRESS, BMM055_CTRL_INT1); 
-  Serial.print("controlINT1: 0x"); Serial.println(controlINT1, HEX);
-  Serial.print("  default is 0x"); Serial.print(0x3f, HEX);
+  controlInt1 = read8(BMM055_ADDRESS, BMM055_CTRL_INT1); 
+  Serial.print("controlInt1 0x4D: 0x"); Serial.println(controlInt1, HEX);
+  Serial.print("       default is 0x"); Serial.print(0x3f, HEX);
   Serial.println(" - all disabled");
   
   Serial.print("[7] En Data Overrun: ");
-  Serial.println((controlINT1 >> 7) & 1u, HEX);
+  Serial.println((controlInt1 >> 7) & 1u, HEX);
 
   Serial.print("[6] En Overflow Int: ");
-  Serial.println((controlINT1 >> 6) & 1u, HEX);
+  Serial.println((controlInt1 >> 6) & 1u, HEX);
 
   Serial.print("[5] En High Int Z:   ");
-  Serial.println((controlINT1 >> 5) & 1u, HEX);
+  Serial.println((controlInt1 >> 5) & 1u, HEX);
 
   Serial.print("[4] En High Int Y:   ");
-  Serial.println((controlINT1 >> 4) & 1u, HEX);
+  Serial.println((controlInt1 >> 4) & 1u, HEX);
 
   Serial.print("[3] En High Int X:   ");
-  Serial.println((controlINT1 >> 3) & 1u, HEX);
+  Serial.println((controlInt1 >> 3) & 1u, HEX);
 
   Serial.print("[2] En Low Int Z:    ");
-  Serial.println((controlINT1 >> 2) & 1u, HEX);
+  Serial.println((controlInt1 >> 2) & 1u, HEX);
 
   Serial.print("[1] En Low Int Y:    ");
-  Serial.println((controlINT1 >> 1) & 1u, HEX);
+  Serial.println((controlInt1 >> 1) & 1u, HEX);
 
   Serial.print("[0] En Low Int X:    ");
-  Serial.println((controlINT1 >> 0) & 1u, HEX);
+  Serial.println((controlInt1 >> 0) & 1u, HEX);
 }
 
 // Control Operation Register Desglosado
-void bmm055::printMagControlOP ()
+void bmm055::printMagControlOp ()
 {
-  controlOP = read8(BMM055_ADDRESS, BMM055_CTRL_OP); 
-  Serial.print("controlOP: 0x"); Serial.println(controlOP, HEX);
+  controlOp = read8(BMM055_ADDRESS, BMM055_CTRL_OP); 
+  Serial.print("controlOp: 0x"); Serial.println(controlOp, HEX);
   Serial.print("default is 0x"); Serial.print(0x06, HEX);
   Serial.println(" - advanced self test off, Output Data Rate 10Hz, Sleep OP Mode, self test off");
   
   Serial.print("[7] Adv. ST <1>:   ");
-  Serial.println((controlOP >> 7) & 1u, HEX);
+  Serial.println((controlOp >> 7) & 1u, HEX);
 
   Serial.print("[6] Adv. ST <0>:   ");
-  Serial.println((controlOP >> 6) & 1u, HEX);
+  Serial.println((controlOp >> 6) & 1u, HEX);
 
   Serial.print("[5] Data rate <2>: ");
-  Serial.println((controlOP >> 5) & 1u, HEX);
+  Serial.println((controlOp >> 5) & 1u, HEX);
 
   Serial.print("[4] Data rate <1>: ");
-  Serial.println((controlOP >> 4) & 1u, HEX);
+  Serial.println((controlOp >> 4) & 1u, HEX);
 
   Serial.print("[3] Data rate <0>: ");
-  Serial.println((controlOP >> 3) & 1u, HEX);
+  Serial.println((controlOp >> 3) & 1u, HEX);
 
   Serial.print("[2] Opmode <1>:    ");
-  Serial.println((controlOP >> 2) & 1u, HEX);
+  Serial.println((controlOp >> 2) & 1u, HEX);
 
   Serial.print("[1] Opmode <0>:    ");
-  Serial.println((controlOP >> 1) & 1u, HEX);
+  Serial.println((controlOp >> 1) & 1u, HEX);
 
   Serial.print("[0] Selft Test:    ");
-  Serial.println((controlOP >> 0) & 1u, HEX);
+  Serial.println((controlOp >> 0) & 1u, HEX);
 }
 
 // Control Power Register Desglosado
@@ -180,10 +310,10 @@ void bmm055::printMagInterruptStatus ()
 // Imprime el valor raw de X, Y, Z y RHALL
 void bmm055::printMagRawData ()
 {
-  rawRHall = read16_LE(BMM055_ADDRESS, 0x48) >> 2;
-  rawDataZ = read16_LE(BMM055_ADDRESS, 0x46) >> 1;
-  rawDataY = read16_LE(BMM055_ADDRESS, 0x44) >> 3;
-  rawDataX = read16_LE(BMM055_ADDRESS, 0x42) >> 3;
+  rawRHall = read16_LE(BMM055_ADDRESS, BMM055_RHALL_LSB) >> 2;
+  rawDataZ = read16_LE(BMM055_ADDRESS, BMM055_DATAZ_LSB) >> 1;
+  rawDataY = read16_LE(BMM055_ADDRESS, BMM055_DATAY_LSB) >> 3;
+  rawDataX = read16_LE(BMM055_ADDRESS, BMM055_DATAX_LSB) >> 3;
 
   Serial.print("rawRHall: 0x");
   Serial.println(rawRHall, HEX);
@@ -191,30 +321,21 @@ void bmm055::printMagRawData ()
   Serial.print("rawDataZ: 0x");
   Serial.println(rawDataZ, HEX);
 
-  Serial.print("rawDataZ: 0x");
-  Serial.println(rawDataZ, HEX);
+  Serial.print("rawDataY: 0x");
+  Serial.println(rawDataY, HEX);
 
-  Serial.print("rawDataZ: 0x");
-  Serial.println(rawDataZ, HEX);
+  Serial.print("rawDataX: 0x");
+  Serial.println(rawDataX, HEX);
 }
 
 
 void bmm055::printMagChipID ()
 {
   chipID = read8(BMM055_ADDRESS, BMM055_CHIP_ID);
-  Serial.print("Chip ID: 0x");
-  Serial.println(chipID, HEX);
+  Serial.print("     Chip ID: 0x"); Serial.println(chipID, HEX);
+  Serial.println("default is: 0x32");
 }
 
 
-void bmm055::setSuspendMode ()
-{
-  write8(BMM055_ADDRESS, BMM055_CTRL_POWER, 0x0);
-  delay(2); // asegurar escritura
-}
 
-void bmm055::setSleepMode ()
-{
-  write8(BMM055_ADDRESS, BMM055_CTRL_POWER, 0x1);
-  delay(2); // asegurar escritura
-}
+

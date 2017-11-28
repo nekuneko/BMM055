@@ -14,20 +14,20 @@ void setup()
   
   // Suspend Mode
   Serial.println("Suspend Mode");
-  mag.setSuspendMode();
+  mag.doSuspendMode();
   //printMagPowerStatus();
   //Serial.println();
   //delay(1000);
   
   // Sleep Mode
   Serial.println("Sleep Mode");
-  mag.setSleepMode();
+  mag.doSleepMode();
   //printMagPowerStatus();
   //Serial.println();
   //delay(1000);
 
   // OpMode Normal
-  mag.printMagControlINT1();
+  mag.printMagControlInt1();
  
 
   /*
