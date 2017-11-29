@@ -1,6 +1,5 @@
-#include "i2c_adafruit.h"
+#include "i2c_helper.h"
 
-/* i2c funcions by Adafruit */
 
 void i2c_init ()
 {
@@ -17,7 +16,7 @@ void write8 (byte i2c_addr, byte reg, byte value)
 }
 
 
-
+// Unsigned
 uint8_t read8 (byte i2c_addr, byte reg)
 {
   uint8_t value;
@@ -55,20 +54,6 @@ uint16_t read16_LE(byte i2c_addr, byte reg)
 
 }
 
-
-int16_t readS16(byte i2c_addr, byte reg)
-{
-  return (int16_t)read16(i2c_addr, reg);
-
-}
-
-int16_t readS16_LE(byte i2c_addr, byte reg)
-{
-  return (int16_t)read16_LE(i2c_addr, reg);
-
-}
-
-
 uint32_t read24(byte i2c_addr, byte reg)
 {
   uint32_t value;
@@ -86,3 +71,24 @@ uint32_t read24(byte i2c_addr, byte reg)
 
   return value;
 }
+
+
+// Signed
+int8_t readS8 (byte i2c_addr, byte reg)
+{
+  return (int8_t)read8(i2c_addr, reg);
+}
+
+
+int16_t readS16(byte i2c_addr, byte reg)
+{
+  return (int16_t)read16(i2c_addr, reg);
+}
+
+int16_t readS16_LE(byte i2c_addr, byte reg)
+{
+  return (int16_t)read16_LE(i2c_addr, reg);
+}
+
+
+

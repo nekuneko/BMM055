@@ -2,9 +2,13 @@
 #define __BMM055_H__
 
 #include <Arduino.h>
-#include "i2c_adafruit.h"
+#include "i2c_helper.h"
 
 #define BMM055_ADDRESS 0x10
+
+#define BMM055_CHANNEL_Z (2u)
+#define BMM055_CHANNEL_Y (1u)
+#define BMM055_CHANNEL_X (0u)
 
 // BMM055 Registers
 enum 
@@ -27,10 +31,40 @@ enum
   BMM055_DATAY_LSB            = 0x44, // [RO]
   BMM055_DATAX_MSB            = 0x43, // [RO]
   BMM055_DATAX_LSB            = 0x42, // [RO]
-  //BMM055_MAG_DATA           = 0x42, // [RO] 0x42 - 0x49 DATAX, DATAY, DATAZ, RHALL
+  BMM055_MAG_DATA             = 0x42, // [RO] 0x42 - 0x49 DATAX, DATAY, DATAZ, RHALL
     
   BMM055_CHIP_ID              = 0x40,  // [RO]
 };
+
+
+/* Trim Extended Registers */
+#define BMM050_DIG_X1                      (0x5D)
+#define BMM050_DIG_Y1                      (0x5E)
+#define BMM050_DIG_Z4_LSB                  (0x62)
+#define BMM050_DIG_Z4_MSB                  (0x63)
+#define BMM050_DIG_X2                      (0x64)
+#define BMM050_DIG_Y2                      (0x65)
+#define BMM050_DIG_Z2_LSB                  (0x68)
+#define BMM050_DIG_Z2_MSB                  (0x69)
+#define BMM050_DIG_Z1_LSB                  (0x6A)
+#define BMM050_DIG_Z1_MSB                  (0x6B)
+#define BMM050_DIG_XYZ1_LSB                (0x6C)
+#define BMM050_DIG_XYZ1_MSB                (0x6D)
+#define BMM050_DIG_Z3_LSB                  (0x6E)
+#define BMM050_DIG_Z3_MSB                  (0x6F)
+#define BMM050_DIG_XY2                     (0x70)
+#define BMM050_DIG_XY1                     (0x71)
+
+
+/* compensated output value returned if sensor had overflow */
+#define BMM050_OVERFLOW_OUTPUT      -32768
+#define BMM050_OVERFLOW_OUTPUT_S32    ((s32)(-2147483647-1))
+#define BMM050_OVERFLOW_OUTPUT_FLOAT  0.0f
+#define BMM050_FLIP_OVERFLOW_ADCVAL   -4096
+#define BMM050_HALL_OVERFLOW_ADCVAL   -16384
+
+
+
 
 class bmm055 
 {
@@ -50,9 +84,35 @@ public:
   uint16_t rawDataY             = 0;     // Addr 0x45 + 0x44
   uint16_t rawDataX             = 0;     // Addr 0x43 + 0x42
 
+  float datax;/**<mag compensated X  data*/
+  float datay;/**<mag compensated Y  data*/
+  float  dataz;/**<mag compensated Z  data*/
+  uint16_t resistance;/**<mag R  data*/
+  uint8_t data_ready;/**<mag data ready status*/
+
+  // Trim Registers
+  int8_t dig_x1;/**< trim x1 data */
+  int8_t dig_y1;/**< trim y1 data */
+
+  int8_t dig_x2;/**< trim x2 data */
+  int8_t dig_y2;/**< trim y2 data */
+
+  uint16_t dig_z1;/**< trim z1 data */
+  int16_t  dig_z2;/**< trim z2 data */
+  int16_t  dig_z3;/**< trim z3 data */
+  int16_t  dig_z4;/**< trim z4 data */
+
+  uint8_t dig_xy1;/**< trim xy1 data */
+  int8_t  dig_xy2;/**< trim xy2 data */
+
+  uint16_t dig_xyz1;/**< trim xyz1 data */
+
+
 // Constructor
   bmm055();
 
+  init();
+  void init_trim_registers ();
 
 // Métodos modificadores
   void setRepZ          (uint8_t value);
@@ -66,43 +126,62 @@ public:
   void doSuspendMode ();
   void doSleepMode   ();
   void doSoftReset   ();
+  void doNormalMode  ();
 
+  // @brief This API used to set the self test of the sensor in the register 0x4C bit 0
+  // @param set : The value of selftest
+  // @note write true to start self test
+  void setSelfTest (bool set);
 
+  void enableChannel(uint8_t channel, bool channel_state);
+
+  bool getDRDY ();
 // Métodos observadores
+
+  void getRawData ();
+
+  float getCompensatedX ();
+  //float getCompensatedY ();
+
+
+  void printTrimRegisters ();
+
   // Imprime todos los registros del magnetómetro sin desglose de información
-  void printMagDefaultValues ();
+  void printDefaultValues ();
+
+  void printSelfTest();
 
   // Imprime el número de repeticiones en el eje Z
-  void printMagRepZ ();
+  void printRepZ ();
 
   // Imprime el número de repeticiones en los ejes X e Y
-  void printMagRepXY ();
+  void printRepXY ();
 
   // Imprime el valor de umbral máximo configurado
-  void printMagHighThreshold ();
+  void printHighThreshold ();
 
   // Imprime el valor de umbral mínimo configurado
-  void printMagLowThreshold ();
+  void printLowThreshold ();
 
   // Control Interruption & Axis Register 2 Desglosado
-  void printMagControlInt2 ();
+  void printControlInt2 ();
 
   // Control Interruption Register 1 Desglosado
-  void printMagControlInt1 ();
+  void printControlInt1 ();
 
   // Control Operation Register Desglosado
-  void printMagControlOp ();
+  void printControlOp ();
 
   // Control Power Register Desglosado
-  void printMagPowerStatus ();
+  void printPowerStatus ();
 
   // Interrupt Status Register Desglosado
-  void printMagInterruptStatus ();
+  void printInterruptStatus ();
 
   // Imprime el valor raw de X, Y, Z y RHALL
-  void printMagRawData ();
+  void printRawData ();
 
-  void printMagChipID ();
+  void printChipID ();
 };
 
 
