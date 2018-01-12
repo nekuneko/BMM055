@@ -5,7 +5,7 @@
 bmm055::bmm055 ()
 {}
 
-bmm055::init ()
+void bmm055::init ()
 {  
   controlRepZ          = read8(BMM055_ADDRESS, BMM055_CTRL_REP_Z);              
   controlRepXY         = read8(BMM055_ADDRESS, BMM055_CTRL_REP_XY);
@@ -176,65 +176,141 @@ void bmm055::printSelfTest()
 bool bmm055::getDRDY ()
 {
   uint8_t DRDY = read8(BMM055_ADDRESS, BMM055_RHALL_LSB);
-  return (DRDY & 1u);
+  data_ready = (DRDY & 1u);
+  return data_ready;
 }
 
 
 void bmm055::getRawData ()
 {
+
   // Burst Read! 9 bytes: rawDataX(2) + rawDataY(2) + rawDataZ(2) + rawRHall(2) + interruptStatusReg(1)
+  // From BMM055_MAG_DATA (0x42) to BMM055_INT_STATUS (0x4A)
   uint8_t rawData[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+  uint8_t data = 0;
+  burstRead(BMM055_ADDRESS, BMM055_MAG_DATA, rawData, 9); 
 
-  Wire.beginTransmission((uint8_t)BMM055_ADDRESS);
-  Wire.write((uint8_t)BMM055_MAG_DATA);
-  Wire.endTransmission();
-  Wire.requestFrom((uint8_t)BMM055_ADDRESS, (byte)9);
-
-  for (int i=1; i<=9; ++i)
-    rawData[i] = Wire.read();
-
-  rawDataX = (rawData[1] << 8) | rawData[0];
-  rawDataX >>= 3;
-  rawDataY = (rawData[3] << 8) | rawData[2];
-  rawDataY >>= 3;
-  rawDataZ = (rawData[5] << 8) | rawData[4];
-  rawDataZ >>= 1;
+  data = (rawData[1] << 8) | rawData[0];
+  data >>= 3;																// los tres valores menos significativos del registro se deprecian, fixed '0', fixed '0', X-self test
+  rawDataX = (int8_t) data;
+  data = (rawData[3] << 8) | rawData[2];
+  data >>= 3;																// los tres valores menos significativos del registro se deprecian, fixed '0', fixed '0', Y-self test
+  rawDataY = (int8_t) data;
+  data = (rawData[5] << 8) | rawData[4];
+  data >>= 1;																// el valor menos significativos del registro se deprecian, Z-self test
+  rawDataZ = (int8_t) data;
   rawRHall = (rawData[7] << 8) | rawData[6];
-  rawRHall >>= 2;
+  rawRHall >>= 2;																// los dos valores menos significativos del registro se deprecian: fixed '0', Data Ready Status
+
 
   interruptStatusReg = rawData[8];
-
-/*
-  rawRHall = read16_LE(BMM055_ADDRESS, BMM055_RHALL_LSB) >> 2;
-  rawDataZ = read16_LE(BMM055_ADDRESS, BMM055_DATAZ_LSB) >> 1;
-  rawDataY = read16_LE(BMM055_ADDRESS, BMM055_DATAY_LSB) >> 3;
-  rawDataX = read16_LE(BMM055_ADDRESS, BMM055_DATAX_LSB) >> 3;
-  */
 }
 
 // Extracted by "bmm050_compensate_X_float" Bosch BMM150 API function
+// float bmm050_compensate_X_float(s16 mag_data_x, u16 data_r)
 float bmm055::getCompensatedX ()
 {
-  float compensatedX = 0;
+	float inter_retval = BMM050_INIT_VALUE;
 
-  if (rawDataX == BMM050_FLIP_OVERFLOW_ADCVAL) // overflow
-    return BMM050_OVERFLOW_OUTPUT_FLOAT;
-  else // no overflow
-  {
-    if (rawRHall != 0 && dig_xyz1 != 0)
-      compensatedX = ((((float)dig_xyz1) * 16384.0 / rawRHall) - 16384.0);
-    else
-      return BMM050_OVERFLOW_OUTPUT_FLOAT;
-
-    compensatedX = (((rawDataX * 
-                    ((((((float)dig_xy2) * 
-                     (compensatedX*compensatedX / 268435456.0) + 
-                     compensatedX * ((float)dig_xy1)/ 16384.0)) + 256.0) * 
-                   (((float)dig_x2) + 160.0))) / 8192.0) + (((float)dig_x1) * 8.0)) / 16.0; 
-  }
-
-  return compensatedX;
+	if (rawDataX != BMM050_FLIP_OVERFLOW_ADCVAL	/* no overflow */
+	   ) {
+		if ((rawRHall != BMM050_INIT_VALUE)
+		&& (dig_xyz1 != BMM050_INIT_VALUE)) {
+			inter_retval = ((((float)dig_xyz1)
+			* 16384.0 / rawRHall) - 16384.0);
+		} else {
+			inter_retval = BMM050_OVERFLOW_OUTPUT_FLOAT;
+			return inter_retval;
+		}
+		inter_retval = (((rawDataX * ((((((float)dig_xy2) *
+			(inter_retval*inter_retval /
+			268435456.0) +
+			inter_retval * ((float)dig_xy1)
+			/ 16384.0)) + 256.0) *
+			(((float)dig_x2) + 160.0)))
+			/ 8192.0)
+			+ (((float)dig_x1) *
+			8.0)) / 16.0;
+	} else {
+		inter_retval = BMM050_OVERFLOW_OUTPUT_FLOAT;
+	}
+return inter_retval;
 }
+
+
+// Extracted by "bmm050_compensate_Y_float" Bosch BMM150 API function
+// float bmm050_compensate_Y_float(s16 mag_data_y, u16 data_r)
+float bmm055::getCompensatedY ()
+{
+	float inter_retval = 0;
+
+	if (rawDataY != BMM050_FLIP_OVERFLOW_ADCVAL /* no overflow */
+	   ) {
+		if ((rawRHall != 0)
+		&& (dig_xyz1 != 0)) {
+			inter_retval = ((((float)dig_xyz1)
+			* 16384.0
+			/rawRHall) - 16384.0);
+		} else {
+			inter_retval = BMM050_OVERFLOW_OUTPUT_FLOAT;
+			return inter_retval;
+		}
+		inter_retval = (((rawDataY * ((((((float)dig_xy2) *
+			(inter_retval*inter_retval
+			/ 268435456.0) +
+			inter_retval * ((float)dig_xy1)
+			/ 16384.0)) +
+			256.0) *
+			(((float)dig_y2) + 160.0)))
+			/ 8192.0) +
+			(((float)dig_y1) * 8.0))
+			/ 16.0;
+	} else {
+		/* overflow, set output to 0.0f */
+		inter_retval = BMM050_OVERFLOW_OUTPUT_FLOAT;
+	}
+	datay = inter_retval;
+	return inter_retval;
+}
+
+// Extracted by "bmm050_compensate_Z_float" Bosch BMM150 API function
+// float bmm050_compensate_Z_float(s16 mag_data_z, u16 data_r)
+float bmm055::getCompensatedZ ()
+{
+	float inter_retval = BMM050_INIT_VALUE;
+	 /* no overflow */
+	if (rawDataZ != BMM050_HALL_OVERFLOW_ADCVAL) {
+		if ((dig_z2 != BMM050_INIT_VALUE)
+		&& (dig_z1 != BMM050_INIT_VALUE)
+		&& (dig_xyz1 != BMM050_INIT_VALUE)
+		&& (rawRHall != BMM050_INIT_VALUE)) {
+			inter_retval = ((((((float)rawDataZ)-
+			((float)dig_z4)) * 131072.0)-
+			(((float)dig_z3)*(((float)rawRHall)
+			-((float)dig_xyz1))))
+			/((((float)dig_z2)+
+			((float)dig_z1)*((float)rawRHall) /
+			32768.0) * 4.0)) / 16.0;
+		}
+	} else {
+		/* overflow, set output to 0.0f */
+		inter_retval = BMM050_OVERFLOW_OUTPUT_FLOAT;
+	}
+return inter_retval;
+}
+
+
+void bmm055::updateMagData()
+{
+	while(data_ready);
+
+	getRawData();
+	datax = getCompensatedX();
+	datay = getCompensatedY();
+	dataz = getCompensatedZ();
+	resistance = rawRHall;
+}
+
 
 
 void bmm055::printTrimRegisters ()

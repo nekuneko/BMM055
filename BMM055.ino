@@ -1,4 +1,4 @@
-#include "i2c_helper.h"
+#include "i2c_helper.h" // i2c_init()
 #include "bmm055.h"
 
 bmm055 mag;  //pierde el bootloader, hay que llamar al constructor:
@@ -82,12 +82,17 @@ void setup()
 
 void loop() 
 {
- 
-  if (mag.getDRDY())
-  {
-    mag.getRawData();
-    Serial.print("compensatedX: "); Serial.println(mag.getCompensatedX());
-  }
+  unsigned long startTime = millis();
+  mag.updateMagData();
+  unsigned long elapsedTime = millis() - startTime;
+  Serial.print("Elapsed measeure time: "); Serial.print(elapsedTime); Serial.println(" milliseconds"); 
+  Serial.print("x: "); Serial.println(mag.x());
+  Serial.print("y: "); Serial.println(mag.y());
+  Serial.print("z: "); Serial.println(mag.z());
+  Serial.print("r: "); Serial.println(mag.r());
+  Serial.println();
+
+  delay(1000);
    //mag.printRawData();
     
 }

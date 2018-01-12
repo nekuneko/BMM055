@@ -1,8 +1,10 @@
 #ifndef __BMM055_H__
 #define __BMM055_H__
 
-#include <Arduino.h>
 #include "i2c_helper.h"
+
+typedef int16_t s16;
+typedef int32_t s32;
 
 #define BMM055_ADDRESS 0x10
 
@@ -57,6 +59,7 @@ enum
 
 
 /* compensated output value returned if sensor had overflow */
+#define BMM050_INIT_VALUE 0
 #define BMM050_OVERFLOW_OUTPUT      -32768
 #define BMM050_OVERFLOW_OUTPUT_S32    ((s32)(-2147483647-1))
 #define BMM050_OVERFLOW_OUTPUT_FLOAT  0.0f
@@ -64,6 +67,24 @@ enum
 #define BMM050_HALL_OVERFLOW_ADCVAL   -16384
 
 
+
+	/********************************************/
+	/**\name BIT SHIFTING DEFINITIONS  */
+	/********************************************/
+	/*Shifting Constants*/
+	#define BMM050_SHIFT_BIT_POSITION_BY_01_BIT     (1)
+	#define BMM050_SHIFT_BIT_POSITION_BY_02_BITS    (2)
+	#define BMM050_SHIFT_BIT_POSITION_BY_03_BITS    (3)
+	#define BMM050_SHIFT_BIT_POSITION_BY_05_BITS    (5)
+	#define BMM050_SHIFT_BIT_POSITION_BY_06_BITS    (6)
+	#define BMM050_SHIFT_BIT_POSITION_BY_07_BITS    (7)
+	#define BMM050_SHIFT_BIT_POSITION_BY_08_BITS    (8)
+	#define BMM050_SHIFT_BIT_POSITION_BY_09_BITS    (9)
+	#define BMM050_SHIFT_BIT_POSITION_BY_12_BITS    (12)
+	#define BMM050_SHIFT_BIT_POSITION_BY_13_BITS    (13)
+	#define BMM050_SHIFT_BIT_POSITION_BY_16_BITS    (16)
+	#define BMM050_SHIFT_BIT_POSITION_BY_14_BITS    (14)
+	#define BMM050_SHIFT_BIT_POSITION_BY_15_BITS    (15)
 
 
 class bmm055 
@@ -80,15 +101,15 @@ public:
   uint8_t controlPower          = 0;     // Addr 0x4B def val 0x01 -> Power control, soft reset
   uint8_t interruptStatusReg    = 0;     // Addr 0x4A def val 0x00 -> INTERRUPT_STATUS_  uint16_t rawRHall          
   uint16_t rawRHall             = 0;     // Addr 0x49 + 0x48
-  uint16_t rawDataZ             = 0;     // Addr 0x47 + 0x46
-  uint16_t rawDataY             = 0;     // Addr 0x45 + 0x44
-  uint16_t rawDataX             = 0;     // Addr 0x43 + 0x42
+  int16_t rawDataZ             = 0;     // Addr 0x47 + 0x46
+  int16_t rawDataY             = 0;     // Addr 0x45 + 0x44
+  int16_t rawDataX             = 0;     // Addr 0x43 + 0x42
 
   float datax;/**<mag compensated X  data*/
   float datay;/**<mag compensated Y  data*/
-  float  dataz;/**<mag compensated Z  data*/
+  float dataz;/**<mag compensated Z  data*/
   uint16_t resistance;/**<mag R  data*/
-  uint8_t data_ready;/**<mag data ready status*/
+  bool data_ready;/**<mag data ready status*/
 
   // Trim Registers
   int8_t dig_x1;/**< trim x1 data */
@@ -111,7 +132,7 @@ public:
 // Constructor
   bmm055();
 
-  init();
+  void init();
   void init_trim_registers ();
 
 // Métodos modificadores
@@ -136,13 +157,21 @@ public:
   void enableChannel(uint8_t channel, bool channel_state);
 
   bool getDRDY ();
-// Métodos observadores
+
 
   void getRawData ();
 
   float getCompensatedX ();
-  //float getCompensatedY ();
+  float getCompensatedY ();
+  float getCompensatedZ ();
 
+  void updateMagData();
+
+// Métodos observadores
+  float  x () { return datax; }
+  float  y () { return datay; }
+  float  z () { return dataz; }
+  uint16_t r () { return resistance; }
 
   void printTrimRegisters ();
 
