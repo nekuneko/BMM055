@@ -14,7 +14,6 @@ void write8 (byte i2c_addr, byte reg, byte value)
   Wire.write((uint8_t)reg);
   Wire.write((uint8_t)value);
   Wire.endTransmission();
-  
 }
 
 
@@ -29,6 +28,7 @@ void burstRead(byte i2c_addr, byte reg, uint8_t* values, int n_bytes)
 
   Wire.requestFrom((uint8_t)i2c_addr, (byte)n_bytes);
   int i = 0;
+  while(!Wire.available());
   while(Wire.available())
   {
     values[i] = Wire.read();
@@ -46,6 +46,8 @@ uint8_t read8 (byte i2c_addr, byte reg)
   Wire.write((uint8_t)reg);
   Wire.endTransmission();
   Wire.requestFrom((uint8_t)i2c_addr, (byte)1);
+
+  //while(!Wire.available());
   value = Wire.read();
 
   return value;
@@ -61,6 +63,8 @@ uint16_t read16(byte i2c_addr, byte reg)
   Wire.write((uint8_t)reg);
   Wire.endTransmission();
   Wire.requestFrom((uint8_t)i2c_addr, (byte)2);
+  
+  while(!Wire.available());
   value = (Wire.read() << 8) | Wire.read();
 
 
@@ -72,7 +76,6 @@ uint16_t read16_LE(byte i2c_addr, byte reg)
 {
   uint16_t temp = read16(i2c_addr, reg);
   return (temp >> 8) | (temp << 8);
-
 }
 
 uint32_t read24(byte i2c_addr, byte reg)
@@ -95,6 +98,7 @@ uint32_t read24(byte i2c_addr, byte reg)
 
 
 // Signed
+/*
 void burstRead(byte i2c_addr, byte reg, int8_t* values, int n_bytes)
 {
   uint8_t value;
@@ -111,7 +115,7 @@ void burstRead(byte i2c_addr, byte reg, int8_t* values, int n_bytes)
     ++i;
   }
 }
-
+*/
 
 int8_t readS8 (byte i2c_addr, byte reg)
 {
