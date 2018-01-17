@@ -10,7 +10,7 @@ void setup()
   while (!Serial); // Esperar a que se abra el serial
   Serial.println("BMM055 NEKU test");
 
-  mag.init();
+  mag.init(BMM050_PRESETMODE_ENHANCED);
   //mag.printTrimRegisters();
 }
 

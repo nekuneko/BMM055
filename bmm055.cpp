@@ -7,7 +7,7 @@
 bmm055::bmm055 ()
 {}
 
-void bmm055::init ()
+void bmm055::init (uint8_t BMM050_PRESETMODE)
 { 
 	/* set device from suspend into sleep mode */
 	this->setSleepMode();
@@ -38,7 +38,7 @@ void bmm055::init ()
   this->init_trim_registers();
 
   /* set the preset mode as regular*/
-  this->setPresetMode(BMM050_PRESETMODE_REGULAR);
+  this->setPresetMode(BMM050_PRESETMODE);
 
   // Power ON
   this->setNormalMode();
@@ -343,7 +343,7 @@ void bmm055::getRawData ()
   temp = (((int16_t)rawData[5]) << 8) | rawData[4];
   rawDataZ = (int16_t)(temp >> 1);													// el valor menos significativos del registro se deprecia: Z-self test
   
-  rawRHall = (((int16_t)rawData[7]) << 8) | rawData[6];
+  rawRHall = (((uint16_t)rawData[7]) << 8) | rawData[6];
   rawRHall >>= 2;																// los dos valores menos significativos del registro se deprecian: fixed '0', Data Ready Status
 
 

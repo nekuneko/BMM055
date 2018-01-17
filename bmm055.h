@@ -186,7 +186,7 @@ public:
 // Constructor
   bmm055();
 
-  void init();
+  void init(uint8_t BMM050_PRESETMODE = BMM050_PRESETMODE_REGULAR);
   void init_trim_registers ();
 
 // Métodos modificadores
