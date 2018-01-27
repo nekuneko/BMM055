@@ -8,112 +8,130 @@ void i2c_init ()
 
 
 
-void write8 (uint8_t i2c_addr, uint8_t reg, uint8_t value)
+void write8 (byte i2c_addr, byte reg, byte value)
 {
-  Wire.beginTransmission(i2c_addr);   // start transmission to device 
-  Wire.write(reg);                    // sends register address to read from
-  Wire.write(value);                  // write data
-  Wire.endTransmission();             // end transmission
+  Wire.beginTransmission((uint8_t)i2c_addr);
+  Wire.write((uint8_t)reg);
+  Wire.write((uint8_t)value);
+  Wire.endTransmission();
 }
 
 
 // Unsigned
-uint8_t read8 (uint8_t i2c_addr, uint8_t reg)
+void burstRead(byte i2c_addr, byte reg, uint8_t* values, int n_bytes)
+{
+  uint8_t value;
+  
+  Wire.beginTransmission((uint8_t)i2c_addr);
+  Wire.write((uint8_t)reg);
+  Wire.endTransmission();
+
+  Wire.requestFrom((uint8_t)i2c_addr, (byte)n_bytes);
+  int i = 0;
+  while(!Wire.available());
+  while(Wire.available())
+  {
+    values[i] = Wire.read();
+    ++i;
+  }
+    
+}
+
+
+uint8_t read8 (byte i2c_addr, byte reg)
 {
   uint8_t value;
 
-  Wire.beginTransmission(i2c_addr);   // start transmission to device 
-  Wire.write(reg);                    // sends register address to read from
-  Wire.endTransmission();             // end transmission
+  Wire.beginTransmission((uint8_t)i2c_addr);
+  Wire.write((uint8_t)reg);
+  Wire.endTransmission();
+  Wire.requestFrom((uint8_t)i2c_addr, (byte)1);
 
-  Wire.beginTransmission(i2c_addr);   // start transmission to device 
-  Wire.requestFrom(i2c_addr, 1u);     // send data n-bytes read
-  //while(Wire.available()!=1u);        // wait until data is ready
-  value = Wire.read();                  // receive DATA
-  Wire.endTransmission();             // end transmission
+  //while(!Wire.available());
+  value = Wire.read();
 
   return value;
 }
 
 
 
-uint16_t read16(uint8_t i2c_addr, uint8_t reg)
+uint16_t read16(byte i2c_addr, byte reg)
 {
   uint16_t value;
 
-  Wire.beginTransmission(i2c_addr);   // start transmission to device 
-  Wire.write(reg);                    // sends register address to read from
-  Wire.endTransmission();             // end transmission
+  Wire.beginTransmission((uint8_t)i2c_addr);
+  Wire.write((uint8_t)reg);
+  Wire.endTransmission();
+  Wire.requestFrom((uint8_t)i2c_addr, (byte)2);
+  
+  while(!Wire.available());
+  value = (Wire.read() << 8) | Wire.read();
 
-  Wire.beginTransmission(i2c_addr);   // start transmission to device 
-  Wire.requestFrom(i2c_addr, 2u);     // send data n-bytes read
-  //while(Wire.available()!=2u);      // wait until data is ready
-  value = (Wire.read() << 8) | Wire.read();  // first receive MSB, secondly receive LSB
-  Wire.endTransmission();             // end transmission
 
-  return value;                       // return MSB + LSB
+  return value;
 }
 
 
-uint16_t read16_LE(uint8_t i2c_addr, uint8_t reg) 
+uint16_t read16_LE(byte i2c_addr, byte reg) 
 {
-  uint16_t temp = read16(i2c_addr, reg);  // temp = LSB + MSB
-  return (temp >> 8) | (temp << 8);       // MSB + LSB
+  uint16_t temp = read16(i2c_addr, reg);
+  return (temp >> 8) | (temp << 8);
 }
 
-
-// REVISAR
-uint32_t read24(uint8_t i2c_addr, uint8_t reg)
+uint32_t read24(byte i2c_addr, byte reg)
 {
   uint32_t value;
 
-  Wire.beginTransmission(i2c_addr);
-  Wire.write(reg);
+  Wire.beginTransmission((uint8_t)i2c_addr);
+  Wire.write((uint8_t)reg);
   Wire.endTransmission();
-
-  Wire.beginTransmission(i2c_addr);
-  Wire.requestFrom(i2c_addr, 3u);
-  //while(!Wire.available());
+  Wire.requestFrom((uint8_t)i2c_addr, (byte)3);
+  
   value = Wire.read();
   value <<= 8;
   value |= Wire.read();
   value <<= 8;
   value |= Wire.read();
-  Wire.endTransmission();             // end transmission
 
   return value;
 }
 
-void burstRead(uint8_t i2c_addr, uint8_t reg, uint8_t* values, uint8_t n_bytes)
+
+// Signed
+/*
+void burstRead(byte i2c_addr, byte reg, int8_t* values, int n_bytes)
 {
   uint8_t value;
   
-  Wire.beginTransmission(i2c_addr);     // start transmission to device 
-  Wire.write(reg);                      // sends register address to read from
-  Wire.endTransmission();               // end transmission
-
-  Wire.beginTransmission(i2c_addr);     // start transmission to device 
-  Wire.requestFrom(i2c_addr, n_bytes);  // send data n-bytes read
-  //while(Wire.available()!=n_bytes);     // wait until data is ready
-  for (int i=0; i<n_bytes; ++i)         // read data
-    values[i] = Wire.read();
+  Wire.beginTransmission((uint8_t)i2c_addr);
+  Wire.write((uint8_t)reg);
   Wire.endTransmission();
+
+  Wire.requestFrom((uint8_t)i2c_addr, (byte)n_bytes);
+  int i = 0;
+  while(Wire.available())
+  {
+    values[i] = Wire.read();
+    ++i;
+  }
 }
+*/
 
-// Signed
-
-int8_t readS8 (uint8_t i2c_addr, uint8_t reg)
+int8_t readS8 (byte i2c_addr, byte reg)
 {
-  return (int8_t) read8(i2c_addr, reg);
+  return (int8_t)read8(i2c_addr, reg);
 }
 
 
-int16_t readS16(uint8_t i2c_addr, uint8_t reg)
+int16_t readS16(byte i2c_addr, byte reg)
 {
-  return (int16_t) read16(i2c_addr, reg);
+  return (int16_t)read16(i2c_addr, reg);
 }
 
-int16_t readS16_LE(uint8_t i2c_addr, uint8_t reg)
+int16_t readS16_LE(byte i2c_addr, byte reg)
 {
-  return (int16_t) read16_LE(i2c_addr, reg);
+  return (int16_t)read16_LE(i2c_addr, reg);
 }
+
+
+
