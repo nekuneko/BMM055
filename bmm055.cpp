@@ -7,176 +7,27 @@
 bmm055::bmm055 ()
 {}
 
-void bmm055::init (uint8_t BMM050_PRESETMODE)
-{ 
-	/* set device from suspend into sleep mode */
-	this->setSleepMode();
 
-	/*Read CHIP_ID and REv. info */
-	chipID = 0;
-	while (chipID != BMM055_CHIP_ID_VALUE)
-	{	
-		chipID = read8(BMM055_ADDRESS, BMM055_CHIP_ID);
-		if (chipID != BMM055_CHIP_ID_VALUE)
-		{
-			Serial.print("ERROR chip_id is 0x"); Serial.print(BMM055_CHIP_ID_VALUE, HEX); 
-		  Serial.print(" not 0x"); Serial.println(chipID, HEX);
-		} 
-	}
-
-  controlRepZ          = read8(BMM055_ADDRESS, BMM055_CTRL_REP_Z);              
-  controlRepXY         = read8(BMM055_ADDRESS, BMM055_CTRL_REP_XY);
-  controlHighThreshold = read8(BMM055_ADDRESS, BMM055_CTRL_HIGH_THRESHOLD);    
-  controlLowThreshold  = read8(BMM055_ADDRESS, BMM055_CTRL_LOW_THRESHOLD);   
-  controlInt2          = read8(BMM055_ADDRESS, BMM055_CTRL_INT2);    
-  controlInt1          = read8(BMM055_ADDRESS, BMM055_CTRL_INT1);    
-  controlOp            = read8(BMM055_ADDRESS, BMM055_CTRL_OP);   
-  controlPower         = read8(BMM055_ADDRESS, BMM055_CTRL_POWER);   
-  interruptStatusReg   = read8(BMM055_ADDRESS, BMM055_INT_STATUS);     
-
-  /* Function to initialise trim values */
-  this->init_trim_registers();
-
-  /* set the preset mode as regular*/
-  this->setPresetMode(BMM050_PRESETMODE);
-
-  // Power ON
-  this->setNormalMode();
-}
-
-void bmm055::init_trim_registers ()
+uint8_t bmm055::getChipID ()
 {
-  dig_x1 = read8(BMM055_ADDRESS, BMM050_DIG_X1);            // < trim x1 data
-  dig_y1 = read8(BMM055_ADDRESS, BMM050_DIG_Y1);            // < trim y1 data 
-
-  dig_x2 = read8(BMM055_ADDRESS, BMM050_DIG_X2);            // < trim x2 data 
-  dig_y2 = read8(BMM055_ADDRESS, BMM050_DIG_Y2);            // < trim y2 data
-
-  dig_xy1 = read8(BMM055_ADDRESS, BMM050_DIG_XY1);          // < trim xy1 data 
-  dig_xy2 = read8(BMM055_ADDRESS, BMM050_DIG_XY2);          // < trim xy2 data
-
-  dig_z1 = read16_LE(BMM055_ADDRESS, BMM050_DIG_Z1_LSB);    // < trim z1 data 
-  dig_z2 = read16_LE(BMM055_ADDRESS, BMM050_DIG_Z2_LSB);    // < trim z2 data 
-  dig_z3 = read16_LE(BMM055_ADDRESS, BMM050_DIG_Z3_LSB);    // < trim z3 data
-  dig_z4 = read16_LE(BMM055_ADDRESS, BMM050_DIG_Z4_LSB);    // < trim z4 data 
-
-  dig_xyz1 = read16_LE(BMM055_ADDRESS, BMM050_DIG_XYZ1_LSB); // < trim xyz1 data 
+  return read8(BMM055_ADDRESS, BMM055_CHIP_ID);
 }
 
-
-void bmm055::setRepZ (uint8_t value)
-{
-  controlRepZ = value;
-  write8(BMM055_ADDRESS, BMM055_CTRL_REP_Z, controlRepZ);
-  delay(2); // wait until changes take effect
-}
-
-void bmm055::setRepXY (uint8_t value)
-{
-  controlRepXY = value;
-  write8(BMM055_ADDRESS, BMM055_CTRL_REP_XY, controlRepXY);
-  delay(2); // wait until changes take effect
-}
-
-void bmm055::setHighThreshold (uint8_t value) 
-{
-  controlHighThreshold = value;
-  write8(BMM055_ADDRESS, BMM055_CTRL_HIGH_THRESHOLD, controlHighThreshold);
-  delay(2); // wait until changes take effect
-}
-
-void bmm055::setLowThreshold (uint8_t value) 
-{
-  controlLowThreshold = value;
-  write8(BMM055_ADDRESS, BMM055_CTRL_LOW_THRESHOLD, controlLowThreshold);
-  delay(2); // wait until changes take effect
-}
-
-void bmm055::setControlInt2 (uint8_t value)
-{
-  controlInt2 = value;
-  write8(BMM055_ADDRESS, BMM055_CTRL_INT2, controlInt2);
-  delay(2); // wait until changes take effect
-}
-
-void bmm055::setControlInt1 (uint8_t value)
-{
-  controlInt1 = value;
-  write8(BMM055_ADDRESS, BMM055_CTRL_INT1, controlInt1);
-  delay(2); // wait until changes take effect
-}
-
-void bmm055::setControlOp (uint8_t value)
-{
-  controlOp = value;
-  write8(BMM055_ADDRESS, BMM055_CTRL_OP, controlOp);
-  delay(2); // wait until changes take effect
-}
-
-
-float bmm055::getHeading()
-{
-	float heading = 0; // degrees
-	//float Pi = 3.14159;
-  
-/*
-	heading = atan2(datay, datax);
-	if(heading < 0) 
-		heading += 2*M_PI;
-	if(heading > 2*M_PI) 
-		heading -= 2*M_PI;
- 
- //radians to degree
- heading = heading * 180/ M_PI;
- */
-
-   // Adafruit
-  // Calculate the angle of the vector y,x
-  heading = (atan2(datay,datax) * 180) / M_PI;
-  
-  // Normalize to 0-360
-  if (heading < 0)
-  {
-    heading = 360 + heading;
-  }
-  
-
-  return heading;
-}
 
 uint8_t bmm055::getPowerStatus ()
 {
-	controlPower = read8(BMM055_ADDRESS, BMM055_CTRL_POWER);
-	return controlPower;
+  return read8(BMM055_ADDRESS, BMM055_CTRL_POWER);
 }
 
-void bmm055::setSuspendMode ()
+void setPower (bool on_off)
 {
-	this->getPowerStatus();
-	controlPower &= ~(1 << 0); // Clear bit 0 (power bit) to 0
+  uint8_t controlPower = read8(BMM055_ADDRESS, BMM055_CTRL_POWER);
+  if (on_off) // on
+    controlPower |= (1 << 0); // Set bit 0 (power bit) to 1
+  else
+    controlPower &= ~(1 << 0); // clear bit 0 (power bit) to 0
   write8(BMM055_ADDRESS, BMM055_CTRL_POWER, controlPower);
-  delay(2); // wait until changes take effect BOSCH Driver: /* wait two millisecond for bmc to settle */
 }
-
-void bmm055::setSleepMode ()
-{
-	this->setSuspendMode();
-	controlPower |= (1 << 0); // Set bit 0 (power bit) to 1
-  write8(BMM055_ADDRESS, BMM055_CTRL_POWER, controlPower);
-  delay(2); // wait until changes take effect
-}
-
-void bmm055::setNormalMode ()
-{
-	this->setSleepMode();
-	controlOp = read8(BMM055_ADDRESS, BMM055_CTRL_OP);
-	// Opmode<1:0> = 00b Normal Mode 
-	controlOp &= ~(1 << 1); // Clear bit 1 (Opmode<0>) to 0
-	controlOp &= ~(1 << 2); // Clear bit 2 (Opmode<1>) to 0
-	write8(BMM055_ADDRESS, BMM055_CTRL_OP, controlOp);
-  delay(2); // wait until changes take effect
-}
-
 
 // REVISAR
 void bmm055::setSoftReset ()
@@ -186,10 +37,123 @@ void bmm055::setSoftReset ()
 }
 
 
+void bmm055::setSuspendMode ()
+{
+  uint8_t controlPower = this->getPowerStatus();
+  controlPower &= ~(1 << 0); // Clear bit 0 (power bit) to 0
+  write8(BMM055_ADDRESS, BMM055_CTRL_POWER, controlPower);
+  delay(20); // wait until changes take effect BOSCH Driver: /* wait two millisecond for bmc to settle */
+}
+
+void bmm055::setSleepMode ()
+{
+  this->setSuspendMode();
+  uint8_t controlPower = this->getPowerStatus();
+  controlPower |= (1 << 0); // Set bit 0 (power bit) to 1
+  write8(BMM055_ADDRESS, BMM055_CTRL_POWER, controlPower);
+  delay(20); // wait until changes take effect
+}
+
+void bmm055::setNormalMode ()
+{
+  this->setSleepMode();
+  uint8_t controlOp = read8(BMM055_ADDRESS, BMM055_CTRL_OP);
+  // Opmode<1:0> = 00b Normal Mode 
+  controlOp &= ~(1 << 1); // Clear bit 1 (Opmode<0>) to 0
+  controlOp &= ~(1 << 2); // Clear bit 2 (Opmode<1>) to 0
+  write8(BMM055_ADDRESS, BMM055_CTRL_OP, controlOp);
+  delay(20); // wait until changes take effect
+}
+
+
+
+
+bool bmm055::init (uint8_t BMM050_PRESETMODE)
+{ 
+	/* set device from suspend into sleep mode */
+	this->setSleepMode();
+
+	/*Read CHIP_ID and REv. info */
+  if (this->getChipID() != BMM055_CHIP_ID_VALUE)
+    return 1; // ERROR chip_id not match.
+
+  /* Function to initialise trim values */
+  this->init_trim_registers();
+
+/*
+  write8(BMM055_ADDRESS, BMM055_CTRL_REP_Z,           0x00); // Reg. 0x52: 00000000 = 0x00 - Default
+  write8(BMM055_ADDRESS, BMM055_CTRL_REP_XY,          0x00); // Reg. 0x51: 00000000 = 0x00 - Default
+  write8(BMM055_ADDRESS, BMM055_CTRL_HIGH_THRESHOLD,  0x00); // Reg. 0x50: 00000000 = 0x00 - Default
+  write8(BMM055_ADDRESS, BMM055_CTRL_LOW_THRESHOLD,   0x00); // Reg. 0x4F: 00000000 = 0x00 - Default
+  write8(BMM055_ADDRESS, BMM055_CTRL_INT2,            0x07); // Reg. 0x4E: 00000111 = 0x07 - Default
+  write8(BMM055_ADDRESS, BMM055_CTRL_INT1,            0x00); // Reg. 0x4D: 00111111 = 0x3F - Default
+  write8(BMM055_ADDRESS, BMM055_CTRL_OP,              0x00); // Reg. 0x4C: 00000110 = 0x06 - Default
+*/
+
+  /* set the preset mode (regular by default)*/
+  this->setPresetMode(BMM050_PRESETMODE);
+
+  // Power ON
+  this->setNormalMode();
+
+  return 0; // all ok
+}
+
+void bmm055::init_trim_registers ()
+{
+  dig_x1  = read8(BMM055_ADDRESS, BMM050_DIG_X1);           // < trim x1 data
+  dig_x2  = read8(BMM055_ADDRESS, BMM050_DIG_X2);           // < trim x2 data
+  dig_y1  = read8(BMM055_ADDRESS, BMM050_DIG_Y1);           // < trim y1 data  
+  dig_y2  = read8(BMM055_ADDRESS, BMM050_DIG_Y2);           // < trim y2 data
+  dig_xy1 = read8(BMM055_ADDRESS, BMM050_DIG_XY1);          // < trim xy1 data 
+  dig_xy2 = read8(BMM055_ADDRESS, BMM050_DIG_XY2);          // < trim xy2 data
+
+  dig_z1 = read16_LE(BMM055_ADDRESS, BMM050_DIG_Z1_LSB);    // < trim z1 data 
+  dig_z2 = read16_LE(BMM055_ADDRESS, BMM050_DIG_Z2_LSB);    // < trim z2 data 
+  dig_z3 = read16_LE(BMM055_ADDRESS, BMM050_DIG_Z3_LSB);    // < trim z3 data
+  dig_z4 = read16_LE(BMM055_ADDRESS, BMM050_DIG_Z4_LSB);    // < trim z4 data 
+
+  dig_xyz1 = read16_LE(BMM055_ADDRESS, BMM050_DIG_XYZ1_LSB); // < trim xyz1 data 
+
+}
+
+
+
+
+
+float bmm055::getHeading()
+{
+	float heading = 0; // degrees
+ 
+
+ 	heading = atan2(datay, datax);
+	if(heading < 0) 
+		heading += 2*M_PI;
+	if(heading > 2*M_PI) 
+		heading -= 2*M_PI;
+ 
+ //radians to degree
+ heading = heading * 180/ M_PI;
+
+
+	/*
+  // Adafruit
+  // Calculate the angle of the vector y,x
+  heading = (atan2(datay,datax) * 180) / M_PI;  // datay/100 microtesla to gauss
+  
+  // Normalize to 0-360
+  if (heading < 0)
+    heading = 360 + heading;
+*/
+  return heading;
+}
+
+
+
 void bmm055::setDataRate(uint8_t dataRate)
 {
 	/* set the data rate */
-	controlOp = read8(BMM055_ADDRESS, BMM055_CTRL_OP);
+	uint8_t controlOp = read8(BMM055_ADDRESS, BMM055_CTRL_OP);
 	uint8_t bit_mask = (7u << 3u);  // 111b << 3 = 00111000 (mask of the bits you want to set)
 	controlOp = (controlOp & (~bit_mask)) | (dataRate << 3); 
 
@@ -200,6 +164,42 @@ void bmm055::setDataRate(uint8_t dataRate)
 	write8(BMM055_ADDRESS, BMM055_CTRL_OP, controlOp);
 }
 
+
+void bmm055::setRepZ (uint8_t controlRepZ)
+{
+  write8(BMM055_ADDRESS, BMM055_CTRL_REP_Z, controlRepZ);
+  delay(2); // wait until changes take effect
+}
+
+void bmm055::setRepXY (uint8_t controlRepXY)
+{
+  write8(BMM055_ADDRESS, BMM055_CTRL_REP_XY, controlRepXY);
+  delay(2); // wait until changes take effect
+}
+
+void bmm055::setHighThreshold (uint8_t controlHighThreshold) 
+{
+  write8(BMM055_ADDRESS, BMM055_CTRL_HIGH_THRESHOLD, controlHighThreshold);
+  delay(2); // wait until changes take effect
+}
+
+void bmm055::setLowThreshold (uint8_t controlLowThreshold) 
+{
+  write8(BMM055_ADDRESS, BMM055_CTRL_LOW_THRESHOLD, controlLowThreshold);
+  delay(2); // wait until changes take effect
+}
+
+
+/*
+void bmm055::setRegister(uint8_t reg, uint8_t newValue)
+{
+  uint8_t oldValue = read8(BMM055_ADDRESS, reg);
+  uint8_t bit_mask = (7u << 3u);  // 111b << 3 = 00111000 (mask of the bits you want to set)
+  controlOp = (controlOp & (~bit_mask)) | (dataRate << 3); 
+
+  write8(BMM055_ADDRESS, BMM055_CTRL_OP, controlOp);
+}
+*/
 
 /*
   *  @param v_presetmode_u8: The value of selected preset mode
@@ -241,11 +241,12 @@ void bmm055::setPresetMode(uint8_t presetMode)
 		default:
 			break;
 	}
-
 }
+
+
 void bmm055::enableChannel(uint8_t channel, bool channel_state)
 {
-  controlInt2 = read8(BMM055_ADDRESS, BMM055_CTRL_INT2);
+  uint8_t controlInt2 = read8(BMM055_ADDRESS, BMM055_CTRL_INT2);
   switch (channel)
   {
     case 0: // Channel X
@@ -277,12 +278,15 @@ void bmm055::enableChannel(uint8_t channel, bool channel_state)
 // REVISAR!
 void bmm055::setSelfTest (bool enable)
 {
-  controlOp = read8(BMM055_ADDRESS, BMM055_CTRL_OP);
+  uint8_t controlOp;
 
   if (enable)
     controlOp = 0x07; // Sleep Mode + self test = 1  //|= (1 << 0);  // self test bit = 0
   else
+  {
+    controlOp = read8(BMM055_ADDRESS, BMM055_CTRL_OP);
     controlOp &= ~(1 << 0); // self test bit = 0
+  }
 
   write8(BMM055_ADDRESS, BMM055_CTRL_OP, controlOp);
   delay(2); // wait until changes take effect
@@ -320,19 +324,14 @@ void printVector(uint8_t* vector, int n)
 }
 
 
-
-
-// ¡CUIDADO! Si se "montan" los valores como uint16_t y luego se convierten a (int16_t) resultan valores erroneos
-// hay que trabajar desde el principio con valores int16_t, porque se estaban tomando medidas del orden de 8000 en lugar
-// de -12 por ejemplo, lo cual daba a entender que estaba ocurriendo un desbordamiento de un unsigned.
 void bmm055::getRawData ()
 {
-
-  // Burst Read! 9 bytes: rawDataX(2) + rawDataY(2) + rawDataZ(2) + rawRHall(2) + interruptStatusReg(1)
+  // Burst Read! 8 bytes: rawDataX(2) + rawDataY(2) + rawDataZ(2) + rawRHall(2) 
   // From BMM055_MAG_DATA (0x42) to BMM055_INT_STATUS (0x4A)
-  uint8_t rawData[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+  uint8_t rawData[8] = {0, 0, 0, 0, 0, 0, 0, 0};
   int16_t temp = 0;
-  burstRead(BMM055_ADDRESS, BMM055_MAG_DATA, rawData, 9); 
+  burstRead(BMM055_ADDRESS, BMM055_MAG_DATA, rawData, 8); 
+
 
   temp = (((int16_t)rawData[1]) << 8) | rawData[0];
   rawDataX = (int16_t) (temp >> 3); 												// los tres valores menos significativos del registro se deprecian: fixed '0', fixed '0', X-self test
@@ -347,13 +346,33 @@ void bmm055::getRawData ()
   rawRHall >>= 2;																// los dos valores menos significativos del registro se deprecian: fixed '0', Data Ready Status
 
 
-  interruptStatusReg = rawData[8];
+  /* unstable
+  rawDataX =  ((int16_t)((rawData[1]<<8) | rawData[0])) >> 3; // los tres valores menos significativos del registro se deprecian: fixed '0', fixed '0', X-self test
+  rawDataY =  ((int16_t)((rawData[3]<<8) | rawData[2])) >> 3; // los tres valores menos significativos del registro se deprecian: fixed '0', fixed '0', Y-self test
+  rawDataZ =  ((int16_t)((rawData[5]<<8) | rawData[4])) >> 1; // el valor menos significativos del registro se deprecia: Z-self test
+  rawRHall = ((uint16_t)((rawData[7]<<8) | rawData[6])) >> 2; // los dos valores menos significativos del registro se deprecian: fixed '0', Data Ready Status
+					*/																	
 
+  // DEBUG
 /*
-  Serial.print("rawDataX: 0x"); Serial.println(rawDataX, HEX);
-  Serial.print("rawDataY: 0x"); Serial.println(rawDataY, HEX);
-  Serial.print("rawDataZ: 0x"); Serial.println(rawDataZ, HEX);
-  Serial.print("rawRHall: 0x"); Serial.println(rawRHall, HEX);*/
+  Serial.print("XMSB: 0x"); Serial.println(rawData[1], HEX);
+  Serial.print("XLSB: 0x"); Serial.println(rawData[0], HEX);
+  Serial.print("rawX: 0x"); Serial.println(rawDataX,   HEX);
+
+  Serial.print("YMSB: 0x"); Serial.println(rawData[3], HEX);
+  Serial.print("YLSB: 0x"); Serial.println(rawData[2], HEX);
+  Serial.print("rawY: 0x"); Serial.println(rawDataY,   HEX);
+
+  Serial.print("ZMSB: 0x"); Serial.println(rawData[5], HEX);
+  Serial.print("ZLSB: 0x"); Serial.println(rawData[4], HEX);
+  Serial.print("rawZ: 0x"); Serial.println(rawDataZ,   HEX);
+
+  Serial.print("RMSB: 0x"); Serial.println(rawData[7], HEX);
+  Serial.print("RLSB: 0x"); Serial.println(rawData[6], HEX);
+  Serial.print("rawR: 0x"); Serial.println(rawRHall,   HEX);
+
+  Serial.println();
+  */
 }
 
 void bmm055::updateMagData()
@@ -481,6 +500,15 @@ void bmm055::printTrimRegisters ()
   Serial.print("s8  dig_xy2  : 0x"); Serial.println(dig_xy2,  HEX);
   Serial.print("u16 dig_xyz1 : 0x"); Serial.println(dig_xyz1, HEX);
   Serial.println();
+
+  // DEBUG
+  /*
+  for (uint8_t reg=0x5D; reg<=0x71; ++reg)
+  {
+    uint8_t regVal = read8(BMM055_ADDRESS, reg);
+    Serial.print("Reg 0x"); Serial.print(reg, HEX); Serial.print(": 0x"); Serial.println(regVal, HEX);
+  }
+  */
 }
 
 
@@ -541,7 +569,7 @@ void bmm055::printLowThreshold ()
 // Control Interruption & Axis Register 2 Desglosado
 void bmm055::printControlInt2 ()
 {
-  controlInt2 = read8(BMM055_ADDRESS, BMM055_CTRL_INT2);
+  uint8_t controlInt2 = read8(BMM055_ADDRESS, BMM055_CTRL_INT2);
   Serial.print("controlInt2 0x4E: 0x"); Serial.println(controlInt2, HEX);
   Serial.print("       default is 0x"); Serial.print(0x07, HEX);
   Serial.println(" - XYZ axis active, interrupts disabled");
@@ -576,7 +604,7 @@ void bmm055::printControlInt2 ()
 // Control Interruption Register 1 Desglosado
 void bmm055::printControlInt1 () 
 {
-  controlInt1 = read8(BMM055_ADDRESS, BMM055_CTRL_INT1); 
+  uint8_t controlInt1 = read8(BMM055_ADDRESS, BMM055_CTRL_INT1); 
   Serial.print("controlInt1 0x4D: 0x"); Serial.println(controlInt1, HEX);
   Serial.print("       default is 0x"); Serial.print(0x3f, HEX);
   Serial.println(" - all disabled");
@@ -610,7 +638,7 @@ void bmm055::printControlInt1 ()
 // Control Operation Register Desglosado
 void bmm055::printControlOp ()
 {
-  controlOp = read8(BMM055_ADDRESS, BMM055_CTRL_OP); 
+ uint8_t controlOp = read8(BMM055_ADDRESS, BMM055_CTRL_OP); 
   Serial.print("controlOp: 0x"); Serial.println(controlOp, HEX);
   Serial.print("default is 0x"); Serial.print(0x06, HEX);
   Serial.println(" - advanced self test off, Output Data Rate 10Hz, Sleep OP Mode, self test off");
@@ -644,7 +672,7 @@ void bmm055::printControlOp ()
 // Control Power Register Desglosado
 void bmm055::printPowerStatus ()
 {
-  this->getPowerStatus();
+  uint8_t controlPower = this->getPowerStatus();
   Serial.print("controlPower: 0x"); Serial.println(controlPower, HEX);
   Serial.print("   default is 0x"); Serial.print(0x01, HEX);
   Serial.println(" - SPI4-wire mode, Sleep/Normal/Forced Mode");
@@ -678,7 +706,7 @@ void bmm055::printPowerStatus ()
 // Interrupt Status Register Desglosado
 void bmm055::printInterruptStatus ()
 {
-  interruptStatusReg = read8(BMM055_ADDRESS, BMM055_INT_STATUS);
+  uint8_t interruptStatusReg = read8(BMM055_ADDRESS, BMM055_INT_STATUS);
   Serial.print("interruptStatusReg: 0x"); Serial.println(interruptStatusReg, HEX);
   Serial.print("         default is 0x"); Serial.println(0x00, HEX);
   
@@ -728,8 +756,7 @@ void bmm055::printRawData ()
 
 void bmm055::printChipID ()
 {
-  chipID = read8(BMM055_ADDRESS, BMM055_CHIP_ID);
-  Serial.print("     Chip ID: 0x"); Serial.println(chipID, HEX);
+  Serial.print("     Chip ID: 0x"); Serial.println(this->getChipID(), HEX);
   Serial.println("default is: 0x32");
   Serial.println();
 }

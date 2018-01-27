@@ -144,22 +144,11 @@ enum
 
 class bmm055 
 {
-public:
-  uint8_t chipID                = 0;     // Addr 0x40 def val 0x32
-  uint8_t controlRepZ           = 0;     // Addr 0x52 def val 0x00 -> 
-  uint8_t controlRepXY          = 0;     // Addr 0x51 def val 0x00 ->
-  uint8_t controlHighThreshold  = 0;     // Addr 0x50 def val 0x00 ->
-  uint8_t controlLowThreshold   = 0;     // Addr 0x4F def val 0x00 ->
-  uint8_t controlInt2           = 0;     // Addr 0x4E def val 0x07 -> 
-  uint8_t controlInt1           = 0;     // Addr 0x4D def val 0x3f ->
-  uint8_t controlOp             = 0;     // Addr 0x4C def val 0x06 -> Operation Mode, data rate 
-  uint8_t controlPower          = 0;     // Addr 0x4B def val 0x01 -> Power control, soft reset
-  uint8_t interruptStatusReg    = 0;     // Addr 0x4A def val 0x00 -> INTERRUPT_STATUS_  uint16_t rawRHall          
-  uint16_t rawRHall             = 0;     // Addr 0x49 + 0x48
-  int16_t rawDataZ             = 0;     // Addr 0x47 + 0x46
-  int16_t rawDataY             = 0;     // Addr 0x45 + 0x44
-  int16_t rawDataX             = 0;     // Addr 0x43 + 0x42
-  uint8_t dataRate_            = 0;
+public:     
+  uint16_t rawRHall = 0;     // Addr 0x49 + 0x48
+  int16_t  rawDataZ = 0;     // Addr 0x47 + 0x46
+  int16_t  rawDataY = 0;     // Addr 0x45 + 0x44
+  int16_t  rawDataX = 0;     // Addr 0x43 + 0x42
 
   float datax;/**<mag compensated X  data*/
   float datay;/**<mag compensated Y  data*/
@@ -186,7 +175,8 @@ public:
 // Constructor
   bmm055();
 
-  void init(uint8_t BMM050_PRESETMODE = BMM050_PRESETMODE_REGULAR);
+
+  bool init(uint8_t BMM050_PRESETMODE = BMM050_PRESETMODE_REGULAR);
   void init_trim_registers ();
 
 // Métodos modificadores
@@ -196,9 +186,6 @@ public:
   void setRepXY         (uint8_t value);
   void setHighThreshold (uint8_t value); 
   void setLowThreshold  (uint8_t value); 
-  void setControlInt2   (uint8_t value);
-  void setControlInt1   (uint8_t value);
-  void setControlOp     (uint8_t value);
 
   void setSuspendMode ();
   void setSleepMode   ();
@@ -212,6 +199,8 @@ public:
 
   void enableChannel(uint8_t channel, bool channel_state);
 
+
+  uint8_t getChipID();
   bool getDRDY ();
 
 

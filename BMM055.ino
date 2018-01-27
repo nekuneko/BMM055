@@ -10,8 +10,15 @@ void setup()
   while (!Serial); // Esperar a que se abra el serial
   Serial.println("BMM055 NEKU test");
 
-  mag.init(BMM050_PRESETMODE_ENHANCED);
+  bool fail = mag.init();
+  if (fail)
+    Serial.println("ERROR, invalid CHIP ID");
+    
   //mag.printTrimRegisters();
+
+  //mag.getRawData();
+  mag.printTrimRegisters();
+  //while(true);
 }
 
 void loop() 
