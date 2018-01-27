@@ -125,7 +125,7 @@ float bmm055::getHeading()
 {
 	float heading = 0; // degrees
  
-
+/*
  	heading = atan2(datay, datax);
 	if(heading < 0) 
 		heading += 2*M_PI;
@@ -135,8 +135,32 @@ float bmm055::getHeading()
  //radians to degree
  heading = heading * 180/ M_PI;
 
+*/
 
-	/*
+  // sPARKFUN
+     //Make sure the top edge of the microview is pointed the same way as the x-axis of the MAG3110 unit
+    //As in this case, you may need to add an offset to get the proper angle
+    //In my circuit, the x-axis of the MAG3110 was 90 CW of the front of my microview, so I add 90 degrees
+    //The other code makes the heading pertain to 0 to 360 degrees instead of +- 180
+
+  //Calculate the heading
+  float DEG_PER_RAD = (180.0/3.14159265358979);
+  float x_min = 32767;
+  float x_max = 0x8000;
+
+  float y_min = 32767;
+  float y_max = 0x8000;
+  float x_scale = 1.0/(x_max - x_min);
+  float y_scale = 1.0/(y_max - y_min);
+  heading = (atan2(-datay*y_scale, datax*x_scale) * DEG_PER_RAD) ;
+
+  if (heading < 0) //If the heading is negative (ranges from -1 to -180)
+    heading *= -1; //Negate the heading
+  else if (heading > 0)
+    heading = 360 - heading;
+
+/*
+	
   // Adafruit
   // Calculate the angle of the vector y,x
   heading = (atan2(datay,datax) * 180) / M_PI;  // datay/100 microtesla to gauss
@@ -329,48 +353,31 @@ void bmm055::getRawData ()
   // Burst Read! 8 bytes: rawDataX(2) + rawDataY(2) + rawDataZ(2) + rawRHall(2) 
   // From BMM055_MAG_DATA (0x42) to BMM055_INT_STATUS (0x4A)
   uint8_t rawData[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-  int16_t temp = 0;
   burstRead(BMM055_ADDRESS, BMM055_MAG_DATA, rawData, 8); 
 
-
-  temp = (((int16_t)rawData[1]) << 8) | rawData[0];
-  rawDataX = (int16_t) (temp >> 3); 												// los tres valores menos significativos del registro se deprecian: fixed '0', fixed '0', X-self test
-
-  temp = (((int16_t)rawData[3]) << 8) | rawData[2];									
-  rawDataY = (int16_t)(temp >> 3);													// los tres valores menos significativos del registro se deprecian: fixed '0', fixed '0', Y-self test
-  
-  temp = (((int16_t)rawData[5]) << 8) | rawData[4];
-  rawDataZ = (int16_t)(temp >> 1);													// el valor menos significativos del registro se deprecia: Z-self test
-  
-  rawRHall = (((uint16_t)rawData[7]) << 8) | rawData[6];
-  rawRHall >>= 2;																// los dos valores menos significativos del registro se deprecian: fixed '0', Data Ready Status
-
-
-  /* unstable
   rawDataX =  ((int16_t)((rawData[1]<<8) | rawData[0])) >> 3; // los tres valores menos significativos del registro se deprecian: fixed '0', fixed '0', X-self test
   rawDataY =  ((int16_t)((rawData[3]<<8) | rawData[2])) >> 3; // los tres valores menos significativos del registro se deprecian: fixed '0', fixed '0', Y-self test
   rawDataZ =  ((int16_t)((rawData[5]<<8) | rawData[4])) >> 1; // el valor menos significativos del registro se deprecia: Z-self test
   rawRHall = ((uint16_t)((rawData[7]<<8) | rawData[6])) >> 2; // los dos valores menos significativos del registro se deprecian: fixed '0', Data Ready Status
-					*/																	
+													
 
-  // DEBUG
 /*
+  // DEBUG
+  Serial.println("\tValores RAW");
   Serial.print("XMSB: 0x"); Serial.println(rawData[1], HEX);
   Serial.print("XLSB: 0x"); Serial.println(rawData[0], HEX);
-  Serial.print("rawX: 0x"); Serial.println(rawDataX,   HEX);
+  Serial.println();
 
   Serial.print("YMSB: 0x"); Serial.println(rawData[3], HEX);
   Serial.print("YLSB: 0x"); Serial.println(rawData[2], HEX);
-  Serial.print("rawY: 0x"); Serial.println(rawDataY,   HEX);
+  Serial.println();
 
   Serial.print("ZMSB: 0x"); Serial.println(rawData[5], HEX);
   Serial.print("ZLSB: 0x"); Serial.println(rawData[4], HEX);
-  Serial.print("rawZ: 0x"); Serial.println(rawDataZ,   HEX);
+  Serial.println();
 
   Serial.print("RMSB: 0x"); Serial.println(rawData[7], HEX);
   Serial.print("RLSB: 0x"); Serial.println(rawData[6], HEX);
-  Serial.print("rawR: 0x"); Serial.println(rawRHall,   HEX);
-
   Serial.println();
   */
 }
