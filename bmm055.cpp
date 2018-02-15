@@ -385,7 +385,7 @@ void bmm055::getRawData ()
 void bmm055::updateMagData()
 {
 	while(!this->getDRDY())
-		Serial.println("Data not Ready yet");
+		Serial.println("Mag Data not Ready yet");
 
 	this->getRawData();
 	datax = this->getCompensatedX();
